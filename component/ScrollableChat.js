@@ -8,7 +8,7 @@ const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
 
   return (
-    <View style={{ flex: 1 }}> {/* Added container for proper layout */}
+    <View style={{ flex: 1 }}> 
       <GiftedChat 
         messages={messages} 
         renderMessage={(messageProps) => {
@@ -23,10 +23,12 @@ const ScrollableChat = ({ messages }) => {
                   marginTop={5}
                   marginLeft={5}
                 >
-                  {/* <Image
-                    source={{ uri: currentMessage.sender.pic }}
-                    style={styles.avatar}
-                  /> */}
+                  {currentMessage.sender.pic && (
+                    <Image
+                      source={{ uri: currentMessage.sender.pic }} 
+                      style={styles.avatar}
+                    />
+                  )}
                 </Tooltip>
               )}
               <View

@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react"; 
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
-import { getSender, getSenderFull } from "../config/ChatLogics";
+import { getSender } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
-// import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import LottieView from "lottie-react-native";
 import animationData from "../animations/typing";
 import io from "socket.io-client";
 import axiosInstance from '../config/axios';
-import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 
-const ENDPOINT = "http://172.20.83.27:5000"; // Backend endpoint
+const ENDPOINT = "http://192.168.8.17:5000"; // Backend endpoint
 let socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -40,13 +38,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
-  const sendMessage = async (event) => {
-    if (event.nativeEvent.key === "Enter" && newMessage) {
+  const sendMessage = async () => {
+    if (newMessage) {
       socket.emit("stop typing", selectedChat._id);
       try {
         const { data } = await axiosInstance.post("/message", {
           content: newMessage,
-          chatId: selectedChat._id, // Correctly passing the chatId
+          chatId: selectedChat._id,
         }, {
           headers: { "Content-type": "application/json", Authorization: `Bearer ${user.token}` }
         });
@@ -87,7 +85,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         setMessages((prevMessages) => [...prevMessages, newMessageReceived]); // Use functional update
       }
     });
-  }, [notification]); // Add notification to dependency array
+  }, [notification]);
 
   const typingHandler = (text) => {
     setNewMessage(text);
@@ -115,44 +113,36 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => setSelectedChat(null)}>
-              {/* <Icon name="arrow-back" size={24} /> */}
             </TouchableOpacity>
             {messages && (
               !selectedChat.isGroupChat ? (
-                <>
-                  <Text>{getSender(user, selectedChat.users) || "Unknown Sender"}</Text>
-                  {/* <ProfileModal user={getSenderFull(user, selectedChat.users)} /> */}
-                </>
+                <Text>{getSender(user, selectedChat.users) || "Unknown Sender"}</Text>
               ) : (
-                <>
-                  <Text>{selectedChat.chatName ? selectedChat.chatName.toUpperCase() : "Unnamed Group"}</Text>
-                  <UpdateGroupChatModal fetchMessages={fetchMessages} fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
-                </>
+                <Text>{selectedChat.chatName ? selectedChat.chatName : "Group Chat"}</Text>
               )
             )}
           </View>
-          <View style={styles.messagesContainer}>
-            {loading ? (
-              <ActivityIndicator size="large" color="#0000ff" />
-            ) : (
-              <ScrollableChat messages={messages} />
-            )}
-          </View>
-          {isTyping && (
-            <LottieView source={animationData} autoPlay loop style={styles.typingIndicator} />
+          <ScrollableChat messages={messages} />
+          {loading ? (
+            <ActivityIndicator size="lg" color="blue" />
+          ) : (
+            <View style={styles.footer}>
+              <TextInput
+                placeholder="Type a message"
+                style={styles.input}
+                onChangeText={typingHandler}
+                value={newMessage}
+                onSubmitEditing={sendMessage} 
+              />
+              <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+                <Text>Send</Text>
+              </TouchableOpacity>
+            </View>
           )}
-          <TextInput
-            style={styles.input}
-            placeholder="Enter a message..."
-            value={newMessage}
-            onChangeText={typingHandler}
-            onSubmitEditing={sendMessage}
-          />
+          {isTyping && <LottieView source={animationData} autoPlay loop style={{ width: 100, height: 100 }} />}
         </View>
       ) : (
-        <View style={styles.centered}>
-          <Text>Click on a user to start chatting</Text>
-        </View>
+        <Text>Select a chat to start messaging</Text>
       )}
     </>
   );
@@ -161,38 +151,31 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 8,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  messagesContainer: {
-    flex: 1,
-    padding: 10,
-    backgroundColor: "#E8E8E8",
-    borderRadius: 10,
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   input: {
-    height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    backgroundColor: "#E0E0E0",
-    margin: 10,
-  },
-  typingIndicator: {
-    width: 70,
-    height: 50,
-    marginBottom: 15,
-  },
-  centered: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginRight: 8,
+  },
+  sendButton: {
+    backgroundColor: '#38B2AC',
+    padding: 10,
+    borderRadius: 8,
   },
 });
 

@@ -35,7 +35,7 @@ const Chatpage = () => {
                 <MyChats fetchAgain={fetchAgain} onChatSelect={handleChatSelect} />
               </View>
               <View style={styles.chatboxContainer}>
-                <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
+                <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} chat={selectedChat} />
               </View>
             </>
           ) : (

@@ -10,7 +10,7 @@ const Chatbox = ({ fetchAgain, setFetchAgain }) => {
     <View
       style={[
         styles.container,
-        { display: selectedChat ? "flex" : "none" } // Handle visibility based on selectedChat
+        { display: selectedChat ? "flex" : "none" } 
       ]}
     >
       <SingleChat fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
