@@ -4,6 +4,7 @@ import HomeScreen from '../screens/HomeScreen';
 // import PostScreen from '../screens/PostScreen';
 import InboxScreen from '../screens/InboxScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import MessScreen from '../screens/MessScreen';
 import Colors from '../constants/Colors';
 
 const Tab = createBottomTabNavigator();
@@ -37,6 +38,13 @@ export default function MyTabs() {
       }}
       /> */}
         <Tab.Screen name="Inbox" component={InboxScreen}
+      options={{
+        tabBarIcon: ({ color }) => (
+            <InboxIcon size={20} color={color} />
+        ),
+      }}
+      />
+        <Tab.Screen name="Chat" component={MessScreen}
       options={{
         tabBarIcon: ({ color }) => (
             <InboxIcon size={20} color={color} />
