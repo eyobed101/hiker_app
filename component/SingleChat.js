@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity, Image } from "react-native";
 import { getSender } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
 import ScrollableChat from "./ScrollableChat";
@@ -7,8 +7,10 @@ import LottieView from "lottie-react-native";
 import animationData from "../animations/typing";
 import io from "socket.io-client";
 import axiosInstance from '../config/axios';
+import { Ionicons } from '@expo/vector-icons';
 
-const ENDPOINT = "http://192.168.8.17:5000"; // Backend endpoint
+
+const ENDPOINT = "http://172.20.83.27:5000"; // Backend endpoint
 let socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -28,15 +30,16 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       setLoading(true);
       console.log("Selected", selectedChat._id)
       const { data } = await axiosInstance.get(`/message/${selectedChat._id}`, {
-        headers: { Authorization: `Bearer ${user.token}`
-      }});
+        headers: {
+          Authorization: `Bearer ${user.token}`
+        }
+      });
       setMessages(data);
-      console.log("kkkkksksk",data)
       setLoading(false);
       socket.emit("join chat", selectedChat._id);
     } catch (error) {
       alert("Error Occurred! Failed to load the messages.");
-      setLoading(false); // Ensure loading state is reset
+      setLoading(false);
     }
   };
 
@@ -113,17 +116,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     <>
       {selectedChat ? (
         <View style={styles.container}>
-          <View d="flex"
-            flexDir="column"
-            justifyContent="flex-end"
-            p={3}
-            bg="#E8E8E8"
-            w="100%"
-            h="100%"
-            borderRadius="lg"
-            overflowY="hidden">
+          <View style={styles.headerContainer}>
+          
             <TouchableOpacity onPress={() => setSelectedChat(null)}>
+              <Ionicons name="arrow-back" size={24} color="#000" marginRight={15}/>
             </TouchableOpacity>
+
+            {/* Avatar */}
+            <Image
+              source={{ uri: selectedChat.isGroupChat ? '/path/to/group-avatar.png' : user.avatar }}
+              style={styles.avatar}
+            />
             {messages && (
               !selectedChat.isGroupChat ? (
                 <Text>{getSender(user, selectedChat.users) || "Unknown Sender"}</Text>
@@ -140,16 +143,18 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               margin="auto" />
           ) : (
             <View style={styles.footer}>
-              <TextInput
-                placeholder="Type a message"
-                style={styles.input}
-                onChangeText={typingHandler}
-                value={newMessage}
-                onSubmitEditing={sendMessage}
-              />
-              <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-                <Text>Send</Text>
-              </TouchableOpacity>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  placeholder="Type a message"
+                  style={styles.input}
+                  onChangeText={typingHandler}
+                  value={newMessage}
+                  onSubmitEditing={sendMessage}
+                />
+                <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+                  <Ionicons name="send" size={24} color="white" />
+                </TouchableOpacity>
+              </View>
             </View>
           )}
           {isTyping && <LottieView source={animationData} autoPlay loop style={{ width: 100, height: 100 }} />}
@@ -163,40 +168,55 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 16,
+    padding: 5,
+    margin: 5,
     width: "100%",
+    height: "100%",
+    paddingBottom: "3%",
     justifyContent: "space-between",
-    alignItems: "center",
     backgroundColor: 'white',
     borderRadius: 8
+  },
+  headerContainer: {
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#f0f0f0',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc', 
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-
   },
   footer: {
-    flexDirection: 'column',
-    // alignItems: 'center',
     width: "100%",
-
+    paddingVertical: 10,
   },
-  input: {
-    flex: 1,
-    padding:20,
-    borderRadius: 8,
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  input: {
+    flex: 1, 
+    padding: 15,
+    borderRadius: 8,
     marginRight: 8,
   },
   sendButton: {
     backgroundColor: '#38B2AC',
-    padding: 10,
-    borderRadius: 8,
-    color:"#ffffff"
+    padding: 8,
+    borderRadius: 50, 
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
+
 
 export default SingleChat;

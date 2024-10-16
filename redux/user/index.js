@@ -12,12 +12,14 @@ const loginUser = createAsyncThunk("user/loginUser", async (data) => {
     });
 
     const responseData = {
+      _id : response.data._id,
       token: response.data.token,
       refreshToken: response.data.refreshToken,
       email: data.email,
-      username : response.data.username
+      username : response.data.name
     };
 
+    await AsyncStorage.setItem('_id', response.data._id); 
     await AsyncStorage.setItem('token', response.data.token); 
     await AsyncStorage.setItem('refreshToken', response.data.refreshToken);
     await AsyncStorage.setItem('email', data.email); 

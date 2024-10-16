@@ -47,7 +47,7 @@ export default function LoginScreen() {
         });
       } else {
         setUser(res.payload);
-        console.log("This is User Data", res.payload);
+        console.log("This is User Data", res);
         Toast.show({
           type: 'success',
           text1: translate('Login Successful'),

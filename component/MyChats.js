@@ -21,7 +21,6 @@ const MyChats = ({ fetchAgain }) => {
       };
 
       const { data } = await axiosInstance.get('/chat', config);
-      console.log('here is the data', data);
       setChats(data);
     } catch (error) {
       Alert.alert('Error Occurred!', 'Failed to Load the chats hjhjhjhj', error);

@@ -21,11 +21,7 @@ const Chatpage = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.fullScreenContainer}>
-        {/* Show SideDrawer only when there is no selected chat */}
         {user && !selectedChat && <SideDrawer />}
-        {selectedChat && (
-          <Button title="Back" onPress={handleBackPress} style={styles.backButton} />
-        )}
       </View>
 
       {selectedChat ? (
@@ -60,7 +56,7 @@ const styles = StyleSheet.create({
   },
   fullScreenChatbox: {
     flex: 1,
-    backgroundColor: '#fff', // Ensures that the chatbox is above the SideDrawer
+    backgroundColor: '#fff', 
   },
   content: {
     flexDirection: 'row',
