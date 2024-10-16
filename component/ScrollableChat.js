@@ -1,70 +1,81 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Tooltip } from 'react-native';
+import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity } from 'react-native';
 import { ChatState } from '../Context/ChatProvider';
 import { isLastMessage, isSameSender, isSameSenderMargin, isSameUser } from '../config/ChatLogics';
-import { GiftedChat } from 'react-native-gifted-chat'; // Correct import for GiftedChat
 
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
 
-  return (
-    <View style={{ flex: 1 }}> 
-      <GiftedChat 
-        messages={messages} 
-        renderMessage={(messageProps) => {
-          const { currentMessage } = messageProps;
-          return (
-            <View style={styles.messageContainer}>
-              {(isSameSender(messages, currentMessage, 0, user._id) || isLastMessage(messages, 0, user._id)) && (
-                <Tooltip 
-                  popover={<Text>{currentMessage.sender.name}</Text>} 
-                  backgroundColor="black"
-                  padding={5}
-                  marginTop={5}
-                  marginLeft={5}
-                >
-                  {currentMessage.sender.pic && (
-                    <Image
-                      source={{ uri: currentMessage.sender.pic }} 
-                      style={styles.avatar}
-                    />
-                  )}
-                </Tooltip>
-              )}
-              <View
-                style={[styles.messageBubble, {
-                  backgroundColor: currentMessage.sender._id === user._id ? '#BEE3F8' : '#B9F5D0',
-                  marginLeft: isSameSenderMargin(messages, currentMessage, 0, user._id),
-                  marginTop: isSameUser(messages, currentMessage, 0, user._id) ? 3 : 10,
-                }]}
-              >
-                <Text>{currentMessage.content}</Text>
-              </View>
-            </View>
-          );
-        }}
-      />
+  const renderItem = ({ item, index }) => (
+    <View style={styles.container}>
+      {(isSameSender(messages, item, index, user._id) || isLastMessage(messages, index, user._id)) && (
+        <TouchableOpacity style={styles.avatarContainer}>
+          <Image
+            source={{ uri: item.sender.pic }}
+            style={styles.avatar}
+            accessibilityLabel={item.sender.name} // Accessibility for screen readers
+          />
+          <Text style={styles.tooltip}>{item.sender.name}</Text>
+        </TouchableOpacity>
+      )}
+      <View
+        style={[
+          styles.message,
+          {
+            backgroundColor: item.sender._id === user._id ? '#BEE3F8' : '#B9F5D0',
+            marginLeft: isSameSenderMargin(messages, item, index, user._id),
+            marginTop: isSameUser(messages, item, index, user._id) ? 3 : 10,
+          },
+        ]}
+      >
+        <Text>{item.content}</Text>
+      </View>
     </View>
+  );
+
+  return (
+    <FlatList
+      data={messages}
+      renderItem={renderItem}
+      keyExtractor={(item) => item._id}
+      inverted // To show the latest messages at the bottom
+      contentContainerStyle={styles.listContainer}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  messageContainer: {
+  listContainer: {
+    padding: 10,
+  },
+  container: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginVertical: 2,
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  avatarContainer: {
+    marginRight: 8,
+    alignItems: 'center',
   },
   avatar: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    marginRight: 5,
-    marginTop: 7,
   },
-  messageBubble: {
-    borderRadius: 20,
+  tooltip: {
+    position: 'absolute',
+    top: -20,
+    backgroundColor: 'black',
+    color: 'white',
     padding: 5,
-    paddingHorizontal: 15,
+    borderRadius: 5,
+    fontSize: 12,
+    textAlign: 'center',
+    zIndex: 1,
+  },
+  message: {
+    borderRadius: 20,
+    padding: 10,
     maxWidth: '75%',
   },
 });

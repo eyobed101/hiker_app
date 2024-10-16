@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button } from 'react-native-paper'; // Removed IconButton since it's not used
 import axiosInstance from '../config/axios';
 import { getSender } from '../config/ChatLogics';
 import ChatLoading from './ChatLoading';
 import GroupChatModal from './miscellaneous/GroupChatModal';
 import { ChatState } from '../Context/ChatProvider';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
@@ -24,19 +24,19 @@ const MyChats = ({ fetchAgain }) => {
       console.log('here is the data', data);
       setChats(data);
     } catch (error) {
-      Alert.alert('Error Occurred!', 'Failed to Load the chats', error);
+      Alert.alert('Error Occurred!', 'Failed to Load the chats hjhjhjhj', error);
     }
   };
 
   useEffect(() => {
     const getUserInfo = async () => {
-      const userInfo = await AsyncStorage.getItem('userInfo');
+      const userInfo = await AsyncStorage.getItem('userInfo'); // Use AsyncStorage
       if (userInfo) {
         setLoggedUser(JSON.parse(userInfo));
       }
     };
 
-    getUserInfo();
+    getUserInfo(); // Call the async function
     fetchChats();
     // eslint-disable-next-line
   }, [fetchAgain]);
@@ -48,6 +48,7 @@ const MyChats = ({ fetchAgain }) => {
         <GroupChatModal>
           <Button
             style={styles.groupChatButton}
+
           >
             New Group Chat
           </Button>
@@ -70,7 +71,7 @@ const MyChats = ({ fetchAgain }) => {
                     ? getSender(loggedUser, chat.users)
                     : chat.chatName}
                 </Text>
-                {chat.latestMessage ? (
+                {chat.latestMessage && (
                   <Text style={styles.latestMessage}>
                     <Text style={styles.bold}>
                       {chat.latestMessage.sender.name}:
@@ -79,7 +80,7 @@ const MyChats = ({ fetchAgain }) => {
                       ? `${chat.latestMessage.content.substring(0, 51)}...`
                       : chat.latestMessage.content}
                   </Text>
-                ) : null}
+                )}
               </TouchableOpacity>
             ))}
           </ScrollView>

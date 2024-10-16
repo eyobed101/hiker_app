@@ -39,7 +39,6 @@ const SideDrawer = () => {
   const navigation = useNavigation();
 
   const logoutHandler = () => {
-    // Your logout logic here
     Alert.alert("Logout", "Are you sure you want to logout?", [
       {
         text: "Cancel",
@@ -111,12 +110,8 @@ const SideDrawer = () => {
         <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.searchButton}>
           <Text style={styles.buttonText}>Search User</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Talk-A-Tive</Text>
         <View style={styles.notificationContainer}>
-          {/* <NotificationBadge
-            count={notification.length}
-            style={styles.notificationBadge}
-          /> */}
+
           <TouchableOpacity onPress={logoutHandler}>
             <Avatar
               size="small"
@@ -127,7 +122,6 @@ const SideDrawer = () => {
         </View>
       </View>
 
-      {/* Modal for Search Users */}
       <Modal
         animationType="slide"
         transparent={false}

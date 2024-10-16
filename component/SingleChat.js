@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import { getSender } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
@@ -26,10 +26,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
     try {
       setLoading(true);
+      console.log("Selected", selectedChat._id)
       const { data } = await axiosInstance.get(`/message/${selectedChat._id}`, {
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
+        headers: { Authorization: `Bearer ${user.token}`
+      }});
       setMessages(data);
+      console.log("kkkkksksk",data)
       setLoading(false);
       socket.emit("join chat", selectedChat._id);
     } catch (error) {
@@ -111,7 +113,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     <>
       {selectedChat ? (
         <View style={styles.container}>
-          <View style={styles.header}>
+          <View d="flex"
+            flexDir="column"
+            justifyContent="flex-end"
+            p={3}
+            bg="#E8E8E8"
+            w="100%"
+            h="100%"
+            borderRadius="lg"
+            overflowY="hidden">
             <TouchableOpacity onPress={() => setSelectedChat(null)}>
             </TouchableOpacity>
             {messages && (
@@ -122,9 +132,12 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               )
             )}
           </View>
-          <ScrollableChat messages={messages} />
+          <ScrollableChat className="messages" messages={messages} />
           {loading ? (
-            <ActivityIndicator size="lg" color="blue" />
+            <ActivityIndicator size="lg" color="blue" w={20}
+              h={20}
+              alignSelf="center"
+              margin="auto" />
           ) : (
             <View style={styles.footer}>
               <TextInput
@@ -132,7 +145,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
                 style={styles.input}
                 onChangeText={typingHandler}
                 value={newMessage}
-                onSubmitEditing={sendMessage} 
+                onSubmitEditing={sendMessage}
               />
               <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
                 <Text>Send</Text>
@@ -152,21 +165,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: 'white',
-    borderRadius: 8,
+    borderRadius: 8
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+
   },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    // alignItems: 'center',
+    width: "100%",
+
   },
   input: {
     flex: 1,
-    padding: 8,
+    padding:20,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ccc',
@@ -176,6 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#38B2AC',
     padding: 10,
     borderRadius: 8,
+    color:"#ffffff"
   },
 });
 

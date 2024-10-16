@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, Text, Button } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Button, Text } from 'react-native';
 import Chatbox from '../component/Chatbox';
 import MyChats from '../component/MyChats';
 import SideDrawer from '../component/miscellaneous/SideDrawer';
@@ -7,8 +7,8 @@ import { ChatState } from '../Context/ChatProvider';
 
 const Chatpage = () => {
   const [fetchAgain, setFetchAgain] = useState(false);
-  const { user } = ChatState();
-  const [selectedChat, setSelectedChat] = useState(null); // State to track selected chat
+  const { selectedChat, setSelectedChat, user} = ChatState();
+
 
   const handleChatSelect = (chat) => {
     setSelectedChat(chat); // Set the selected chat
@@ -20,24 +20,24 @@ const Chatpage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {user && !selectedChat && <SideDrawer />}
+      <View style={styles.fullScreenContainer}>
+        {/* Show SideDrawer only when there is no selected chat */}
+        {user && !selectedChat && <SideDrawer />}
+        {selectedChat && (
+          <Button title="Back" onPress={handleBackPress} style={styles.backButton} />
+        )}
+      </View>
 
-      {selectedChat ? ( // Render full screen chat if selectedChat is not null
-        <View style={styles.fullScreenContainer}>
-          <Button title="Back" onPress={handleBackPress} />
+      {selectedChat ? (
+        <View style={styles.fullScreenChatbox}>
           <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} chat={selectedChat} />
         </View>
       ) : (
         <View style={styles.content}>
           {user ? (
-            <>
-              <View style={styles.chatsContainer}>
-                <MyChats fetchAgain={fetchAgain} onChatSelect={handleChatSelect} />
-              </View>
-              <View style={styles.chatboxContainer}>
-                <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} chat={selectedChat} />
-              </View>
-            </>
+            <View style={styles.chatsContainer}>
+              <MyChats fetchAgain={fetchAgain} onChatSelect={handleChatSelect} />
+            </View>
           ) : (
             <View style={styles.noUserContainer}>
               <Text style={styles.noUserText}>No user found. Please log in.</Text>
@@ -54,6 +54,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  fullScreenContainer: {
+    // flex: 1,
+    backgroundColor: '#fff',
+  },
+  fullScreenChatbox: {
+    flex: 1,
+    backgroundColor: '#fff', // Ensures that the chatbox is above the SideDrawer
+  },
   content: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -65,16 +73,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     marginRight: 5,
   },
-  chatboxContainer: {
-    flex: 2,
-    backgroundColor: '#e0e0e0',
-    marginLeft: 5,
-  },
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 10,
-  },
   noUserContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -83,6 +81,9 @@ const styles = StyleSheet.create({
   noUserText: {
     fontSize: 18,
     color: 'red',
+  },
+  backButton: {
+    marginBottom: 10,
   },
 });
 
