@@ -10,7 +10,7 @@ import axiosInstance from '../config/axios';
 import { Ionicons } from '@expo/vector-icons';
 
 
-const ENDPOINT = "http://172.20.83.27:5000"; // Backend endpoint
+const ENDPOINT = "http://172.20.10.5:5000"; // Backend endpoint
 let socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {

@@ -1,52 +1,67 @@
-import { View, Text, TextInput , StyleSheet, ScrollView ,TouchableOpacity ,Image, Pressable , FlatList, Alert } from 'react-native'
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Image, Pressable, FlatList, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Colors from '../constants/Colors'
 import { Picker } from '@react-native-picker/picker'
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
+
 import { useLanguage } from '../LanguageProvider';
 import DateTimePicker from 'react-native-ui-datepicker';
 import dayjs from 'dayjs';
 import Modal from 'react-native-modal'; // Import modal for the dropdown
 import axiosInstance from '../config/axios';
+import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// import { Alert } from 'react-native';
+
+import * as FileSystem from 'expo-file-system';
+
+
 
 
 
 export default function PostScreen() {
- 
- 
+
+
   // const formData = new FormData();
 
   const { translate } = useLanguage();
-  const [formDatas , setFormData] = useState([])
-  const [category , setCategory] = useState("")
-  const [image , setImage] = useState(null)
+  // const [formDatas, setFormData] = useState([])
+  const [formData, setFormData] = useState({});
+  const [category, setCategory] = useState("")
+  const [image, setImage] = useState(null)
   const [startDate, setStartDate] = useState(dayjs());
   const [endDate, setEndDate] = useState(dayjs());
-  const [starttime , setStartTime] = useState(false);
-  const [endtime , setEndTime] = useState(false);
+  const [starttime, setStartTime] = useState(false);
+  const [endtime, setEndTime] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false); // State to handle modal visibility
-  const [categories , setCategorires] = useState([]);
+  const [categories, setCategorires] = useState([]);
+  const [images, setImages] = useState([]);
+  const maxImages = 4;
+
+
 
   const formatDate = (dateString) => {
     const date = new Date(dateString); // Parse the date string
     const year = date.getFullYear(); // Get the full year (YYYY)
     const month = String(date.getMonth() + 1).padStart(2, '0'); // Get the month (MM)
     const day = String(date.getDate()).padStart(2, '0'); // Get the day (DD)
-  
+
     return `${year}-${month}-${day}`; // Return formatted date
   };
-  
+
   // Example usage
   const originalDate = "Sun, 06 Oct 2024 21:00:00 GMT";
   const formattedDate = formatDate(originalDate);
   console.log(formattedDate); // Output: "2024-10-06"
 
-  
+
 
 
   const fetchData = async () => {
     try {
-  
+
       const response = await axiosInstance.get('/category');
       const data = response.data
       return data;
@@ -105,321 +120,397 @@ export default function PostScreen() {
   );
 
 
-  const handleInputChanges = (fieldName , fieldValue) =>(
-    setFormData(prev =>({
-      ...prev ,
-      [fieldName] :fieldValue
+  const handleInputChanges = (fieldName, fieldValue) => (
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: fieldValue
     }))
 
-      // console.log(fieldName , fieldValue)
+    // console.log(fieldName , fieldValue)
   )
+const onSubmit = async () => {
+  let formDataToSend = new FormData();
 
-  const onSubmit = () => {
-    // Ensure FormData is initialized correctly
-    let formData = new FormData();
+  formDataToSend.append('title', formData.title);
+  formDataToSend.append('description', 'huu');
+  formDataToSend.append('location', formData.location);
+  formDataToSend.append('startDate', startDate.toISOString());
+  formDataToSend.append('endDate', endDate.toISOString());
+  formDataToSend.append('price', formData.price);
+  formDataToSend.append('maxParticipants', formData.participant);
+  formDataToSend.append('categories', category);
 
-    const formattedStartDate = formatDate(startDate);
-    const formattedEndDate = formatDate(endDate);
-  
-    // Append other fields to FormData
-    formData.append('title', formDatas.title);
-    formData.append('description', formDatas.description);
-    formData.append('location', formDatas.location);
-    formData.append('itinerary', JSON.stringify(selectedItems));  // Convert array to string
-    formData.append('startDate', formattedStartDate);
-    formData.append('endDate', formattedEndDate);
-    formData.append('price', formDatas.price);
-    formData.append('maxParticipants', formDatas.participant);
-    formData.append('categories', category);
-  
-    // Append the image as an array (even if there's only one image)
-    if (image) {
-      formData.append('images', {
-        uri: image, // The URI of the image
-        name: 'photo.jpg', // A default file name
-        type: 'image/jpeg', // MIME type
-      });
+  // // Ensure the correct field name 'images'
+  // images.forEach((imageUri, index) => {
+  //   const fileExtension = imageUri.split('.').pop(); // Get the file extension
+  //   const mimeType = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
+
+  //   formDataToSend.append('images', {
+  //     uri: imageUri,
+  //     name: `image_${index}.${fileExtension}`, // Ensure proper file extension
+  //     type: mimeType, // Set the correct MIME type
+  //   });
+  // });
+
+  for (const imageUri of images) {
+    const fileInfo = await FileSystem.getInfoAsync(imageUri);
+    const fileExtension = imageUri.split('.').pop();
+    const mimeType = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
+
+    // Check if the file exists
+    if (!fileInfo.exists) {
+      console.error(`File does not exist: ${imageUri}`);
+      return; // Stop the submission if the file is missing
     }
-  
-    // Log FormData to check its content
-    console.log("FormData:", formData);
-  
-    // Since formData.entries() is not always available in React Native, you can manually log fields:
-    formData._parts.forEach((part) => {
-      console.log(`${part[0]}: ${part[1]}`);
+
+    formDataToSend.append('images', {
+      uri: fileInfo.uri,
+      name: `image_${images.indexOf(imageUri)}.${fileExtension}`,
+      type: mimeType, // Set the correct MIME type
     });
+
+    // const imageFile = {
+    //   uri: fileInfo.uri,
+    //   // name: `image_${index}.${fileExtension}`,
+    //   type: mimeType,
+    // };
+
+    // console.log("Appending image:", imageFile);
+    // formDataToSend.append('images', imageFile.uri);
+  }
+
+
+  console.log("log the data before sending", formDataToSend);
+
+  const axiosInstance2 = axios.create({
+    // baseURL: 'http://192.168.137.234:5000/api/v1.0/',
+    baseURL: 'https://hikeapi.issipeteta.net/api/v1.0/',
+    // headers: {
+    //   'Content-Type': 'multipart/form-data',
+    // },
+  });
   
-    // Send the POST request
-    axiosInstance.post('/event/create', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-      .then(response => {
-        console.log('Response:', response.data);
-        setSelectedItems([]); // Reset selected items after successful request
-        Alert.alert("Event Posted Successfully")
-        setFormData([])
-      })
-      .catch(error => {
-        console.error('Error creating event:', error);
-      });
-  }; 
+  axiosInstance2.interceptors.request.use(
+    async (config) => {
+      try {
+        const token = await AsyncStorage.getItem('token'); // Ensure the token key matches what you use
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Error retrieving token:', error);
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  try {
+    const response = await axiosInstance2.post('event/create', formDataToSend);
+    Alert.alert('Event Posted Successfully');
+    setFormData({});
+    setImages([]);
+  } catch (error) {
+    if (error.response) {
+      console.error('Error details:', error.response);
+    } else {
+      console.error('Error creating event:', error.message);
+    }
+  }
+};
 
   
   
-  
+
+  const renderImageItem = ({ item, index }) => (
+    <View style={styles.imageContainer}>
+      <Image source={{ uri: item }} style={styles.image} />
+      <TouchableOpacity
+        style={styles.removeButton}
+        onPress={() => removeImage(index)}
+      >
+        <Text style={styles.removeButtonText}>X</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+
 
   const toggleModal = () => {
     setIsModalVisible(!isModalVisible);
   };
 
-  const openImagePicker = () => {
-    const options = {
-      mediaType: 'photo',
-      includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
-    };
-
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.error) {
-        console.log('Image picker error: ', response.error);
-      } else {
-        let asset = response.assets?.[0];  // Check assets array
-    
-        if (asset) {
-          let imageUri = asset.uri;
-          let fileName = asset.fileName || 'photo.jpg';
-          let type = asset.type || 'image/jpeg';
-    
-          setImage(imageUri);
-    
-          // if (imageUri) {
-          //   // Create FormData and append the image
-          //   formData.append('images', {
-          //     uri: imageUri,
-          //     name: fileName,
-          //     type: type,
-          //   });
-          // }
-        } else {
-          console.log('No asset found in response');
-        }
-      }
+  const openImagePicker = async () => {
+    if (images.length >= maxImages) {
+      Alert.alert(`You can upload a maximum of ${maxImages} images.`);
+      return;
+    }
+  
+    // Request permission to access the media library
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  
+    if (permissionResult.granted === false) {
+      Alert.alert('Permission to access camera roll is required!');
+      return;
+    }
+  
+    // Launch the image library
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
     });
-    
+  
+    if (result.canceled) {
+      console.log('User cancelled image picker');
+    } else {
+      const newImage = result.assets[0].uri; // Updated to match the returned structure
+      console.log("Selected image URI:", newImage); // Log the URI to verify it
+      setImages((prevImages) => [...prevImages, newImage]);
+    }
   };
+  
 
+  const renderStartDate = () => {
+    return (
+      <View>
 
-  const renderStartDate =() =>{
-    return(
- <View>
+        <DateTimePicker
+          mode="single"
+          date={startDate}
+          onChange={(params) => setStartDate(params.date)}
+          calendarTextStyle={{ color: 'black' }}
+          headerTextStyle={{ color: 'black' }}
+          selectedItemColor='blue'
 
-  <DateTimePicker
-        mode="single"
-        date={startDate}
-        onChange={(params) => setStartDate(params.date)}
-        calendarTextStyle={{color:'black'}}
-        headerTextStyle={{color:'black'}}
-        selectedItemColor='blue'	
-        
-      />
- </View>
+        />
+      </View>
     );
   }
 
-  const renderendDate =() =>{
-    return(
- <View>
+  const renderendDate = () => {
+    return (
+      <View>
 
-  <DateTimePicker
-        mode="single"
-        date={endDate}
-        onChange={(params) => setEndDate(params.date)}
-        calendarTextStyle={{color:'black'}}
-        headerTextStyle={{color:'black'}}
-        selectedItemColor='green'	
+        <DateTimePicker
+          mode="single"
+          date={endDate}
+          onChange={(params) => setEndDate(params.date)}
+          calendarTextStyle={{ color: 'black' }}
+          headerTextStyle={{ color: 'black' }}
+          selectedItemColor='green'
 
-      />
- </View>
+        />
+      </View>
     );
   }
 
 
   return (
     <ScrollView style={{
-      padding:20
+      padding: 20
     }}>
       <Text style={{
-        fontSize:20,
-        color:Colors.black
+        fontSize: 20,
+        color: Colors.black
       }}>{translate('add new hiking')}</Text>
 
-      
-      
-    <Pressable onPress={openImagePicker}>
-      
-      {!image ? <Image source={require('../assets/trekking-hiking-FB.jpg')}  style={{width:100 , height:100 , borderRadius:15 , borderWidth:1 , borderColor: 'grey' ,marginTop:20}}/>:
-       <Image source={{uri : image}}  style={{width:100 , height:100 , borderRadius:15 , borderWidth:1 , borderColor: 'grey' ,marginTop:20}}/>}
-      </Pressable>
+
+      <TouchableOpacity onPress={openImagePicker} style={styles.uploadButton}>
+        <Text style={styles.uploadText}>{translate('Upload Images')}</Text>
+      </TouchableOpacity>
+
+      <FlatList
+        data={images}
+        renderItem={renderImageItem}
+        keyExtractor={(item, index) => index.toString()}
+        horizontal
+        style={styles.imageList}
+      />
+
       <View style={styles.inputContainer}>
         <Text style={styles.label}> {translate('hike name')}</Text>
-        <TextInput style={styles.input}  onChangeText={(value) => handleInputChanges('title' , value)} />
+        <TextInput style={styles.input} onChangeText={(value) => handleInputChanges('title', value)} />
       </View>
       <View style={styles.inputContainer}>
         <Text style={styles.label}>{translate('hike location')}</Text>
-        <TextInput style={styles.input}  onChangeText={(value) => handleInputChanges('location' , value)} />
+        <TextInput style={styles.input} onChangeText={(value) => handleInputChanges('location', value)} />
       </View>
       <View style={styles.inputContainer}>
         <Text style={styles.label}>{translate('hike duration')}</Text>
-        <TextInput  style={styles.input}  placeholder={startDate.toString()}   placeholderTextColor="gray" // Change this to your desired color
-   />
+        <TextInput style={styles.input} placeholder={startDate.toString()} placeholderTextColor="gray" // Change this to your desired color
+        />
         {starttime ?
-        <TouchableOpacity style={{justifyContent:'center' , backgroundColor:'blue' , borderRadius:10, padding:10 }} onPress={() => setStartTime(false)} >
-<Text style={{textAlign:'center' , color:'white'}}> Close </Text>
-  </TouchableOpacity>
-  : 
-  <TouchableOpacity style={{justifyContent:'center' , backgroundColor:'blue' , borderRadius:10, padding:10 }} onPress={() => setStartTime(true)} >
-  <Text style={{textAlign:'center' , color:'white'}}> Open </Text>
-    </TouchableOpacity>
-  }
+          <TouchableOpacity style={{ justifyContent: 'center', backgroundColor: 'blue', borderRadius: 10, padding: 10 }} onPress={() => setStartTime(false)} >
+            <Text style={{ textAlign: 'center', color: 'white' }}> Close </Text>
+          </TouchableOpacity>
+          :
+          <TouchableOpacity style={{ justifyContent: 'center', backgroundColor: 'blue', borderRadius: 10, padding: 10 }} onPress={() => setStartTime(true)} >
+            <Text style={{ textAlign: 'center', color: 'white' }}> Open </Text>
+          </TouchableOpacity>
+        }
 
-  {starttime ?
-    renderStartDate() : null
-   
-}
-              <Text style={styles.label}>{translate('up to')}</Text>
-              <TextInput  style={styles.input}  placeholder={endDate.toString()}  placeholderTextColor="gray"  />
+        {starttime ?
+          renderStartDate() : null
 
-              {endtime ?
-        <TouchableOpacity style={{justifyContent:'center' , backgroundColor:'green' , borderRadius:10, padding:10 }} onPress={() => setEndTime(false)} >
-<Text style={{textAlign:'center' , color:'white'}}> Close </Text>
-  </TouchableOpacity>
-  : 
-  <TouchableOpacity style={{justifyContent:'center' , backgroundColor:'green' , borderRadius:10, padding:10 }} onPress={() => setEndTime(true)} >
-  <Text style={{textAlign:'center' , color:'white'}}> Open </Text>
-    </TouchableOpacity>
-  }
+        }
+        <Text style={styles.label}>{translate('up to')}</Text>
+        <TextInput style={styles.input} placeholder={endDate.toString()} placeholderTextColor="gray" />
 
-  {endtime ?
-    renderendDate() : null
-   
-}
+        {endtime ?
+          <TouchableOpacity style={{ justifyContent: 'center', backgroundColor: 'green', borderRadius: 10, padding: 10 }} onPress={() => setEndTime(false)} >
+            <Text style={{ textAlign: 'center', color: 'white' }}> Close </Text>
+          </TouchableOpacity>
+          :
+          <TouchableOpacity style={{ justifyContent: 'center', backgroundColor: 'green', borderRadius: 10, padding: 10 }} onPress={() => setEndTime(true)} >
+            <Text style={{ textAlign: 'center', color: 'white' }}> Open </Text>
+          </TouchableOpacity>
+        }
+
+        {endtime ?
+          renderendDate() : null
+
+        }
       </View>
       <View
-      style={styles.inputContainer}>
+        style={styles.inputContainer}>
         <Text style={styles.label}>{translate('hike category')}</Text>
-           <Picker
-    selectedValue={category}
-    style={styles.input}
-    onValueChange={(itemValue, itemIndex) => {
-        setCategory(itemValue);
-        handleInputChanges('category', itemValue);
-    }}
->
-    {categories.map((categoryItem) => (
-        <Picker.Item
-            key={categoryItem._id} // Set the key as the _id
-            label={categoryItem.name} // Show the name in the dropdown
-            value={categoryItem._id} // Use the _id as the value
-        />
-    ))}
-</Picker>
-</View>
+        <Picker
+          selectedValue={category}
+          style={styles.input}
+          onValueChange={(itemValue, itemIndex) => {
+            setCategory(itemValue);
+            handleInputChanges('category', itemValue);
+          }}
+        >
+          {categories.map((categoryItem) => (
+            <Picker.Item
+              key={categoryItem._id} // Set the key as the _id
+              label={categoryItem.name} // Show the name in the dropdown
+              value={categoryItem._id} // Use the _id as the value
+            />
+          ))}
+        </Picker>
+      </View>
       <View style={styles.inputContainer}>
         <Text style={styles.label}>{translate('hike price')}</Text>
-        <TextInput keyboardType='numeric' style={styles.input}  onChangeText={(value) => handleInputChanges('price' , value)} />
+        <TextInput keyboardType='numeric' style={styles.input} onChangeText={(value) => handleInputChanges('price', value)} />
       </View>
+      <TouchableOpacity onPress={onSubmit} style={styles.button}>
+        <Text style={{ textAlign: 'center', color: Colors.black }}>{translate('submit')}</Text>
+      </TouchableOpacity>
 
       <View style={styles.inputContainer}>
         <Text style={styles.label}>{translate('maximum hike participants')}</Text>
-        <TextInput keyboardType='numeric' style={styles.input}  onChangeText={(value) => handleInputChanges('participant' , value)} />
+        <TextInput keyboardType='numeric' style={styles.input} onChangeText={(value) => handleInputChanges('participant', value)} />
       </View>
-      <View style={styles.inputContainer}>
+      {/* <View style={styles.inputContainer}>
         <Text style={styles.label}>{translate('Itenerary')}</Text>
         <TouchableOpacity style={styles.dropdownButton} onPress={toggleModal}>
-        <Text style={styles.buttonText}>Select Items</Text>
-      </TouchableOpacity>
+          <Text style={styles.buttonText}>Select Items</Text>
+        </TouchableOpacity>
 
-     <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
-        <View style={styles.modalContent}>
-          <FlatList
-            data={items}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            extraData={selectedItems}
-          />
+        <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
+          <View style={styles.modalContent}>
+            <FlatList
+              data={items}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.id}
+              extraData={selectedItems}
+            />
+          </View>
+        </Modal>
+        <View style={styles.selectedItemsContainer}>
+          <Text style={{ color: 'black' }}>Selected Items: {selectedItems.map(id => `Item ${id}`).join(', ') || 'None'}</Text>
         </View>
-      </Modal>
-      <View style={styles.selectedItemsContainer}>
-        <Text style={{color:'black'}}>Selected Items: {selectedItems.map(id => `Item ${id}`).join(', ') || 'None'}</Text>
-      </View>
 
-      </View>
-      <View style={styles.inputContainer}>
+      </View> */}
+      {/* <View style={styles.inputContainer}>
         <Text style={styles.label}>{translate('hike description')}</Text>
-        <TextInput numberOfLines={5} multiline={true} style={styles.input} onChangeText={(value) => handleInputChanges('description' , value)} />
-      </View>
-      <TouchableOpacity onPress={onSubmit} style={styles.button}>
-      <Text style={{textAlign:'center' , color:Colors.white }}>{translate('submit')}</Text>
-      </TouchableOpacity>
+        <TextInput numberOfLines={5} multiline={true} style={styles.input} onChangeText={(value) => handleInputChanges('description', value)} />
+      </View> */}
+      
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  inputContainer :{
-    marginVertical :5
+  container: {
+    padding: 20,
+    backgroundColor: '#f5f5f5',
   },
-  input :{
-    padding:15,
-    backgroundColor : Colors.white,
-    borderRadius :7 ,
-    color:Colors.black
-  } ,
-  label: {
-    marginVertical:5,
-    color:Colors.black
-  } ,
-  button:{
-    padding :15 ,
-    backgroundColor :Colors.primaryColor,
-    borderRadius :15 ,
-    marginVertical:10, marginBottom:20
-  },
- dropdownButton: {
-    padding: 15,
-    backgroundColor: '#4caf50',
-    borderRadius: 5,
-    alignItems: 'center',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.black,
     marginBottom: 20,
   },
-  buttonText: {
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 5,
+    color: Colors.black,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: '#fff',
+  },
+  datePickerContainer: {
+    marginBottom: 20,
+  },
+  uploadButton: {
+    backgroundColor: Colors.primary,
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  uploadText: {
     color: '#fff',
     fontSize: 16,
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 5,
+  imageList: {
+    marginBottom: 20,
   },
-  itemContainer: {
+  imageContainer: {
+    position: 'relative',
+    marginRight: 10,
+  },
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  removeButton: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: 'red',
+    borderRadius: 12,
+    padding: 5,
+  },
+  removeButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  submitButton: {
+    backgroundColor: Colors.primary,
     padding: 15,
-    marginVertical: 5,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop:"-34px"
   },
-  selectedItem: {
-    backgroundColor: '#4caf50', // Highlight selected items
-  },
-  itemText: {
+  submitButtonText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#000',
+    fontWeight: 'bold',
   },
-  selectedItemsContainer: {
-    marginTop: 20,
-  },
-})
+});
